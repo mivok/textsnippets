@@ -7,9 +7,11 @@
 
 from Xlib.display import Display
 from Xlib import X
-import pygtk
-pygtk.require('2.0')
-import gtk
+from Xlib.ext import xtest
+
+#import pygtk
+#pygtk.require('2.0')
+#import gtk
 
 # 110 - Pause
 # 117 - Menu
@@ -17,12 +19,13 @@ hotkeycode = 117
 
 class TextSnippets:
 
-    def __init__(self, hotkey):
+    def __init__(self, hotkey, notifywindow):
         self.disp = Display()
         self.root = self.disp.screen().root
         self.root.change_attributes(event_mask = X.KeyPressMask)
         self.grab_key(hotkey)
         self.hotkey = hotkey
+        self.notifywindow = notifywindow
 
     def grab_key(self, keycode):
         self.root.grab_key(keycode,
@@ -44,11 +47,7 @@ class TextSnippets:
 
     def handle_hotkey(self):
         print "Hotkey pressed"
-        # TODO - ungrab the hotkey (maybe)
-        # Create a new window just to receive events
-        # Receive keyboard events until we have a word or fail
-        # Destroy/hide window
-        # Display progress?
+        self.notifywindow.main()
 
 class NotifyWindow:
     def __init__(self, keytree):
@@ -82,6 +81,21 @@ class NotifyWindow:
             else:
                 print result
                 gtk.main_quit()
+
+class KeyboardTyper:
+    def __init__(self):
+        self.disp = Display()
+
+    def type(self, text):
+        # TODO - work out capital letters and symbols
+        for char in text:
+            keycode = self.disp.keysym_to_keycode(ord(char))
+            xtest.fake_input(self.disp, X.KeyPress, keycode)
+            self.disp.sync()
+            xtest.fake_input(self.disp, X.KeyRelease, keycode)
+            self.disp.sync()
+
+
 
 class KeyTree:
     """A tree listing all the keys needed to be grabbed at a specific point in
@@ -145,9 +159,9 @@ snippets = {
 }
 
 if __name__ == '__main__':
-    #KeyTree.test()
-    #ts = TextSnippets(hotkeycode)
-    #ts.event_loop()
-    kt = KeyTree(snippets.keys())
-    nw = NotifyWindow(kt)
-    nw.main()
+#    kt = KeyTree(snippets.keys())
+#    nw = NotifyWindow(kt)
+#    ts = TextSnippets(hotkeycode, nw)
+#    ts.event_loop()
+    kt = KeyboardTyper()
+    kt.type("Test")
