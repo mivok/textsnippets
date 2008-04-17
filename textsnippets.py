@@ -9,13 +9,14 @@ from Xlib.display import Display
 from Xlib import X
 from Xlib.ext import xtest
 
-#import pygtk
-#pygtk.require('2.0')
-#import gtk
+import pygtk
+pygtk.require('2.0')
+import gtk
 
 # 110 - Pause
 # 117 - Menu
-hotkeycode = 117
+# 227 - Also menu?
+hotkeycode = 227
 
 class TextSnippets:
 
@@ -50,7 +51,7 @@ class TextSnippets:
         self.notifywindow.main()
 
 class NotifyWindow:
-    def __init__(self, keytree):
+    def __init__(self, keytree, snippets):
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
         self.window.connect("delete_event", self.delete_event)
         self.window.connect("destroy", self.destroy)
@@ -61,6 +62,8 @@ class NotifyWindow:
         self.label.show()
         self.window.show()
         self.keytree = keytree
+        self.typer = KeyboardTyper()
+        self.snippets = snippets
 
     def main(self):
         gtk.main()
@@ -81,6 +84,7 @@ class NotifyWindow:
             else:
                 print result
                 gtk.main_quit()
+                #self.typer.type(self.snippets[result])
 
 class KeyboardTyper:
     def __init__(self):
@@ -159,9 +163,9 @@ snippets = {
 }
 
 if __name__ == '__main__':
-#    kt = KeyTree(snippets.keys())
-#    nw = NotifyWindow(kt)
-#    ts = TextSnippets(hotkeycode, nw)
-#    ts.event_loop()
-    kt = KeyboardTyper()
-    kt.type("Test")
+    kt = KeyTree(snippets.keys())
+    nw = NotifyWindow(kt, snippets)
+    ts = TextSnippets(hotkeycode, nw)
+    ts.event_loop()
+#    kt = KeyboardTyper()
+#    kt.type("Test")
