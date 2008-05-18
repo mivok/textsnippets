@@ -145,8 +145,6 @@ class KeyboardTyper:
                         ksmm[keysym] = self.str_to_keycode(
                             self.key_modifiers[wrap_key_index])
                         kskc[keysym] = keycode
-                if str == '|':
-                    print keysym, keycode, wrap_key_index
 
 
 class KeyTree:
