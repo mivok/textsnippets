@@ -7,6 +7,7 @@
 
 from Xlib.display import Display
 from Xlib import X
+from Xlib import XK
 from Xlib.ext import xtest
 
 import pygtk
@@ -89,16 +90,57 @@ class NotifyWindow:
 class KeyboardTyper:
     def __init__(self):
         self.disp = Display()
+        self.keysym_to_modifier_map = {}
+        self.keysym_to_keycode_map = {}
+        self.key_modifiers = (None, "Shift_L", "ISO_Level3_Shift", None, None,
+                None)
+        self.load_keycodes()
+
+    def str_to_keycode(self, str):
+        if str is None:
+            return None
+        keysym = XK.string_to_keysym(str)
+        keycode = self.disp.keysym_to_keycode(keysym)
+        return keycode
 
     def type(self, text):
-        # TODO - work out capital letters and symbols
         for char in text:
-            keycode = self.disp.keysym_to_keycode(ord(char))
+            keysym = ord(char)
+            keycode = self.disp.keysym_to_keycode(keysym)
+            wrap_key = self.keysym_to_modifier_map.get(keysym, None)
+            #print char, keysym, keycode, wrap_key
+            if wrap_key is not None:
+                xtest.fake_input(self.disp, X.KeyPress, wrap_key)
             xtest.fake_input(self.disp, X.KeyPress, keycode)
-            self.disp.sync()
             xtest.fake_input(self.disp, X.KeyRelease, keycode)
+            if wrap_key is not None:
+                xtest.fake_input(self.disp, X.KeyRelease, wrap_key)
             self.disp.sync()
 
+    def load_keycodes(self):
+        d = self.disp
+        ksmm = self.keysym_to_modifier_map
+        kskc = self.keysym_to_keycode_map
+
+        min_keycode = d.display.info.min_keycode
+        max_keycode = d.display.info.max_keycode
+        count = max_keycode + 1 - min_keycode
+        keysyms = d.get_keyboard_mapping(min_keycode, count)
+
+        for keycode_index in xrange(0,count):
+            curr = keysyms[keycode_index]
+            for wrap_key_index in xrange(0, len(curr)):
+                str = XK.keysym_to_string(curr[wrap_key_index])
+                if str is not None:
+                    #keysym = XK.string_to_keysym(str)
+                    keysym = curr[wrap_key_index]
+                    keycode = keycode_index + min_keycode
+                    if not ksmm.has_key(keysym):
+                        ksmm[keysym] = self.str_to_keycode(
+                            self.key_modifiers[wrap_key_index])
+                        kskc[keysym] = keycode
+                if str == '|':
+                    print keysym, keycode, wrap_key_index
 
 
 class KeyTree:
@@ -168,4 +210,4 @@ if __name__ == '__main__':
     ts = TextSnippets(hotkeycode, nw)
     ts.event_loop()
 #    kt = KeyboardTyper()
-#    kt.type("Test")
+#    kt.type("Test !@#$%^&*()<>[]{};':\"|\\~`")
