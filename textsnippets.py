@@ -14,6 +14,8 @@ import pygtk
 pygtk.require('2.0')
 import gtk
 
+import time
+
 # 110 - Pause
 # 117 - Menu
 # 227 - Also menu?
@@ -21,13 +23,14 @@ hotkeycode = 227
 
 class TextSnippets:
 
-    def __init__(self, hotkey, notifywindow):
+    def __init__(self, hotkey, keytree, snippets):
         self.disp = Display()
         self.root = self.disp.screen().root
         self.root.change_attributes(event_mask = X.KeyPressMask)
         self.grab_key(hotkey)
         self.hotkey = hotkey
-        self.notifywindow = notifywindow
+        self.keytree = keytree
+        self.snippets = snippets
 
     def grab_key(self, keycode):
         self.root.grab_key(keycode,
@@ -49,7 +52,8 @@ class TextSnippets:
 
     def handle_hotkey(self):
         print "Hotkey pressed"
-        self.notifywindow.main()
+        notifywindow = NotifyWindow(self.keytree, self.snippets)
+        notifywindow.main()
 
 class NotifyWindow:
     def __init__(self, keytree, snippets):
@@ -79,13 +83,15 @@ class NotifyWindow:
         if data.string != '':
             result = self.keytree.check(data.string)
             if not result:
+                self.window.destroy()
                 gtk.main_quit()
-            if result == True:
+            elif result == True:
                 self.label.set_label(self.label.get_label() + data.string)
             else:
-                print result
+                self.window.destroy()
                 gtk.main_quit()
-                #self.typer.type(self.snippets[result])
+                # TODO - make sure the window has disappeared
+                self.typer.type(self.snippets[result])
 
 class KeyboardTyper:
     def __init__(self):
@@ -206,8 +212,7 @@ snippets = {
 
 if __name__ == '__main__':
     kt = KeyTree(snippets.keys())
-    nw = NotifyWindow(kt, snippets)
-    ts = TextSnippets(hotkeycode, nw)
+    ts = TextSnippets(hotkeycode, kt, snippets)
     ts.event_loop()
 #    kt = KeyboardTyper()
 #    kt.type("Test !@#$%^&*()<>[]{};':\"|\\~`")
