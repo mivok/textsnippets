@@ -31,6 +31,7 @@ class TextSnippets:
         self.hotkey = hotkey
         self.keytree = keytree
         self.snippets = snippets
+        self.typer = KeyboardTyper()
 
     def grab_key(self, keycode):
         self.root.grab_key(keycode,
@@ -52,11 +53,12 @@ class TextSnippets:
 
     def handle_hotkey(self):
         print "Hotkey pressed"
-        notifywindow = NotifyWindow(self.keytree, self.snippets)
-        notifywindow.main()
+        notifywindow = NotifyWindow(self.keytree)
+        snippet = notifywindow.main()
+        self.typer.type(self.snippets[snippet])
 
 class NotifyWindow:
-    def __init__(self, keytree, snippets):
+    def __init__(self, keytree):
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
         self.window.connect("delete_event", self.delete_event)
         self.window.connect("destroy", self.destroy)
@@ -67,11 +69,11 @@ class NotifyWindow:
         self.label.show()
         self.window.show()
         self.keytree = keytree
-        self.typer = KeyboardTyper()
-        self.snippets = snippets
+        self.snippet = False
 
     def main(self):
         gtk.main()
+        return self.snippet
 
     def delete_event(self, widget, event, data=None):
         return False
@@ -88,10 +90,9 @@ class NotifyWindow:
             elif result == True:
                 self.label.set_label(self.label.get_label() + data.string)
             else:
+                self.snippet = result
                 self.window.destroy()
                 gtk.main_quit()
-                # TODO - make sure the window has disappeared
-                self.typer.type(self.snippets[result])
 
 class KeyboardTyper:
     def __init__(self):
