@@ -2,9 +2,6 @@
 
 # Hotkey program, uses python-xlib
 
-# Thoughts:
-#   - grab_keyboard as well as grab_key for after the hotkey?
-
 from Xlib.display import Display
 from Xlib import X
 from Xlib import XK
@@ -16,10 +13,17 @@ import gtk
 
 import time
 
+# Configuration
 # 110 - Pause
 # 117 - Menu
 # 227 - Also menu?
-hotkeycode = 227
+# Can use a name or integer here
+#hotkey = "Menu"
+hotkey = 227
+# Time to wait before starting to type
+# If you find that you are missing the beginning of snippets, then increase
+# this
+delay = 0.1
 
 class TextSnippets:
 
@@ -33,16 +37,16 @@ class TextSnippets:
         self.snippets = snippets
         self.typer = KeyboardTyper()
 
-    def grab_key(self, keycode):
+    def grab_key(self, key):
+        if type(key) == int:
+            keycode = key
+        else:
+            keysym = XK.string_to_keysym(key)
+            if keysym == 0:
+                print "Error, unknown key: %s" % key
+            keycode = self.disp.keysym_to_keycode(keysym)
         self.root.grab_key(keycode,
                 X.AnyModifier, 1, X.GrabModeAsync, X.GrabModeAsync)
-
-    def grab_letter(self, char):
-        keycode = keysym_to_keycode(ord(char))
-        if keycode != 0:
-            self.grab_key(keycode)
-        else:
-            print "Unknown keysym: %s (char %s)" % (keysym, char)
 
     def event_loop(self):
         while 1:
@@ -55,6 +59,7 @@ class TextSnippets:
         print "Hotkey pressed"
         notifywindow = NotifyWindow(self.keytree)
         snippet = notifywindow.main()
+        time.sleep(delay)
         self.typer.type(self.snippets[snippet])
 
 class NotifyWindow:
@@ -211,7 +216,7 @@ snippets = {
 
 if __name__ == '__main__':
     kt = KeyTree(snippets.keys())
-    ts = TextSnippets(hotkeycode, kt, snippets)
+    ts = TextSnippets(hotkey, kt, snippets)
     ts.event_loop()
 #    kt = KeyboardTyper()
 #    kt.type("Test !@#$%^&*()<>[]{};':\"|\\~`")
