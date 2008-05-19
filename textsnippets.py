@@ -124,7 +124,9 @@ class KeyboardTyper:
     def type(self, text):
         for char in text:
             keysym = ord(char)
-            keycode = self.disp.keysym_to_keycode(keysym)
+            keycode = self.keysym_to_keycode_map.get(keysym, None)
+            if keycode is None:
+                keycode = self.disp.keysym_to_keycode(keysym)
             wrap_key = self.keysym_to_modifier_map.get(keysym, None)
             #print char, keysym, keycode, wrap_key
             if wrap_key is not None:
