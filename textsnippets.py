@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-# Hotkey program, uses python-xlib
-
+# System imports
 from Xlib.display import Display
+from Xlib import error
 from Xlib import X
 from Xlib import XK
 from Xlib.ext import xtest
@@ -11,30 +11,20 @@ import pygtk
 pygtk.require('2.0')
 import gtk
 
-import time
+import sys, time
 
-# Configuration
-# 110 - Pause
-# 117 - Menu
-# 227 - Also menu?
-# Can use a name or integer here
-#hotkey = "Menu"
-hotkey = 227
-# Time to wait before starting to type
-# If you find that you are missing the beginning of snippets, then increase
-# this
-delay = 0.1
+# Local imports
+import config
 
 class TextSnippets:
 
-    def __init__(self, hotkey, keytree, snippets):
+    def __init__(self, hotkey, keytree):
         self.disp = Display()
         self.root = self.disp.screen().root
         self.root.change_attributes(event_mask = X.KeyPressMask)
         self.grab_key(hotkey)
         self.hotkey = hotkey
         self.keytree = keytree
-        self.snippets = snippets
         self.typer = KeyboardTyper()
 
     def grab_key(self, key):
@@ -45,8 +35,14 @@ class TextSnippets:
             if keysym == 0:
                 print "Error, unknown key: %s" % key
             keycode = self.disp.keysym_to_keycode(keysym)
+        ec = error.CatchError(error.BadAccess)
         self.root.grab_key(keycode,
-                X.AnyModifier, 1, X.GrabModeAsync, X.GrabModeAsync)
+            X.AnyModifier, 1, X.GrabModeAsync, X.GrabModeAsync, onerror=ec)
+        self.disp.sync()
+        if ec.get_error():
+            print "Unable to set hotkey. Perhaps it is already in use."
+            print "Exiting..."
+            sys.exit(1)
 
     def event_loop(self):
         while 1:
@@ -58,9 +54,19 @@ class TextSnippets:
     def handle_hotkey(self):
         print "Hotkey pressed"
         notifywindow = NotifyWindow(self.keytree)
-        snippet = notifywindow.main()
-        time.sleep(delay)
-        self.typer.type(self.snippets[snippet])
+        snippetword = notifywindow.main()
+        if snippetword == False:
+            print "Invalid snippet"
+        else:
+            snippet = config.snippets[snippetword]
+            if snippet == 'snippet:quit':
+                sys.exit(0)
+            elif snippet == 'snippet:reload':
+                print "Reloading..."
+                reload(config)
+            else:
+                time.sleep(config.delay)
+                self.typer.type(snippet)
 
 class NotifyWindow:
     def __init__(self, keytree):
@@ -206,17 +212,7 @@ class KeyTree:
                     break
             print
 
-
-
-snippets = {
-    'test': 'Hello world',
-    'hello': 'Hi there!',
-    'help': 'No way'
-}
-
 if __name__ == '__main__':
-    kt = KeyTree(snippets.keys())
-    ts = TextSnippets(hotkey, kt, snippets)
+    kt = KeyTree(config.snippets.keys())
+    ts = TextSnippets(config.hotkey, kt)
     ts.event_loop()
-#    kt = KeyboardTyper()
-#    kt.type("Test !@#$%^&*()<>[]{};':\"|\\~`")
