@@ -83,6 +83,7 @@ class NotifyWindow:
         self.window.connect("key_press_event", self.key_press_event)
         self.window.add(self.label)
         self.label.show()
+        self.window.set_position(gtk.WIN_POS_CENTER_ALWAYS)
         self.window.show()
         self.snippets = snippets
         self.snippet = ""
