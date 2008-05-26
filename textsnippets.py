@@ -10,6 +10,8 @@ from Xlib.ext import xtest
 import pygtk
 pygtk.require('2.0')
 import gtk
+from gtk import gdk
+import pango
 
 import sys, time
 
@@ -18,13 +20,13 @@ import config
 
 class TextSnippets:
 
-    def __init__(self, hotkey, keytree):
+    def __init__(self, hotkey, snippets):
         self.disp = Display()
         self.root = self.disp.screen().root
         self.root.change_attributes(event_mask = X.KeyPressMask)
         self.grab_key(hotkey)
         self.hotkey = hotkey
-        self.keytree = keytree
+        self.snippets = snippets
         self.typer = KeyboardTyper()
 
     def grab_key(self, key):
@@ -53,12 +55,14 @@ class TextSnippets:
 
     def handle_hotkey(self):
         print "Hotkey pressed"
-        notifywindow = NotifyWindow(self.keytree)
+        notifywindow = NotifyWindow(self.snippets)
         snippetword = notifywindow.main()
-        if snippetword == False:
-            print "Invalid snippet"
-        else:
-            snippet = config.snippets[snippetword]
+        if snippetword != "":
+            try:
+                snippet = self.snippets[snippetword]
+            except KeyError:
+                print "Invalid snippet: snippetword"
+                return
             if snippet == 'snippet:quit':
                 sys.exit(0)
             elif snippet == 'snippet:reload':
@@ -69,18 +73,21 @@ class TextSnippets:
                 self.typer.type(snippet)
 
 class NotifyWindow:
-    def __init__(self, keytree):
+    def __init__(self, snippets):
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
         self.window.connect("delete_event", self.delete_event)
         self.window.connect("destroy", self.destroy)
         self.window.set_border_width(0)
-        self.label = gtk.Label("Snippet: ")
+        self.window.set_focus_on_map(True)
+        self.label = gtk.Label("")
         self.window.connect("key_press_event", self.key_press_event)
         self.window.add(self.label)
         self.label.show()
         self.window.show()
-        self.keytree = keytree
-        self.snippet = False
+        self.snippets = snippets
+        self.snippet = ""
+        self.valid_snippet = False
+        self.update_label()
 
     def main(self):
         gtk.main()
@@ -93,17 +100,35 @@ class NotifyWindow:
         gtk.main_quit()
 
     def key_press_event(self, widget, data=None):
-        if data.string != '':
-            result = self.keytree.check(data.string)
-            if not result:
+        if data.keyval == gtk.keysyms.Return:
+            if self.snippets.has_key(self.snippet):
                 self.window.destroy()
                 gtk.main_quit()
-            elif result == True:
-                self.label.set_label(self.label.get_label() + data.string)
             else:
-                self.snippet = result
-                self.window.destroy()
-                gtk.main_quit()
+                print "Invalid snippet"
+        elif data.keyval == gtk.keysyms.BackSpace:
+            self.snippet = self.snippet[:-1]
+        elif data.keyval == gtk.keysyms.Escape:
+            self.snippet = ""
+            self.window.destroy()
+            gtk.main_quit()
+        elif data.string != '':
+            self.snippet = self.snippet + data.string
+        self.valid_snippet = self.snippets.has_key(self.snippet)
+        self.update_label()
+
+    def update_label(self):
+        self.label.set_text("Snippet: " + self.snippet)
+        self.set_label_font()
+
+    def set_label_font(self):
+        attrs = pango.AttrList()
+        attrs.insert(pango.AttrFamily("Bitstream Vera Sans", 0, 65535))
+        attrs.insert(pango.AttrSize(20000, 0, 65535))
+        if self.valid_snippet:
+            attrs.insert(pango.AttrForeground(0,32768,0,0,65535))
+        self.label.set_attributes(attrs)
+
 
 class KeyboardTyper:
     def __init__(self):
@@ -161,60 +186,10 @@ class KeyboardTyper:
                         kskc[keysym] = keycode
 
 
-class KeyTree:
-    """A tree listing all the keys needed to be grabbed at a specific point in
-    order to match all possible strings"""
-
-    def __init__(self, words):
-        self.tree = {}
-        for word in words:
-            curr = self.tree
-            for letter in word:
-                curr = curr.setdefault(letter, {})
-            curr['word'] = word
-        self.reset()
-
-    def check(self, letter):
-        """ Check for a word in the tree, a letter at a time, tracing the path
-        of the word for each successive letter.
-
-        Returns: True   - letter continues a word
-                 False  - letter is not in the list of words
-                 string - letter completes a word, returns the word"""
-        try:
-            self.currletter = self.currletter[letter]
-        except KeyError:
-            self.reset()
-            return False
-
-        try:
-            word = self.currletter['word']
-            self.reset()
-            return word
-        except KeyError:
-            return True
-
-
-    def reset(self):
-        self.wordsofar = ""
-        self.currletter = self.tree
-
-    @staticmethod
-    def test():
-        """ Simple testing of the Keytree """
-        kt = KeyTree(['test','hello','help','telephone'])
-        testwords = ['test','teach','help','hello']
-
-        for word in testwords:
-            print "Testing word: %s" % word
-            for letter in word:
-                result = kt.check(letter)
-                print letter, result
-                if not result:
-                    break
-            print
-
 if __name__ == '__main__':
-    kt = KeyTree(config.snippets.keys())
-    ts = TextSnippets(config.hotkey, kt)
-    ts.event_loop()
+    try:
+        ts = TextSnippets(config.hotkey, config.snippets)
+        ts.event_loop()
+    except KeyboardInterrupt:
+        print "Exiting..."
+        sys.exit(0)
