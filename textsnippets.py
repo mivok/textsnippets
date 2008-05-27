@@ -11,6 +11,7 @@ import pygtk
 pygtk.require('2.0')
 import gtk
 from gtk import gdk
+import gobject
 import pango
 
 import sys, time
@@ -67,7 +68,7 @@ class TextSnippets:
         snippetword = self.notifywindow.main()
         if snippetword != "":
             try:
-                snippet = self.snippets[snippetword]
+                snippet = self.snippets[snippetword]['text']
             except KeyError:
                 print "Invalid snippet: snippetword"
                 return
@@ -93,21 +94,18 @@ class NotifyWindow:
         self.window.add(self.label)
         self.label.show()
         self.snippets = snippets
+
+    def main(self):
         self.snippet = ""
         self.valid_snippet = False
         self.update_label()
-
-    def main(self):
         self.window.show()
         self.window.present()
         self.window.set_keep_above(True)
         self.window.set_position(gtk.WIN_POS_CENTER_ALWAYS)
         for i in xrange(20):
             val = gtk.gdk.keyboard_grab(self.window.window)
-            print val
-            # TODO - get rid of magic number
-            # <enum GDK_GRAB_SUCCESS of type GdkGrabStatus>
-            if val == 0:
+            if val == gtk.gdk.GRAB_SUCCESS:
                 break
             time.sleep(0.1)
         gtk.main()
@@ -116,29 +114,25 @@ class NotifyWindow:
     def delete_event(self, widget, event, data=None):
         return False
 
-    def destroy(self, widget, data=None):
-        gtk.gdk.keyboard_ungrab()
-        gtk.main_quit()
-
     def key_press_event(self, widget, data=None):
         if data.keyval == gtk.keysyms.Return:
             if self.snippets.has_key(self.snippet):
-                gtk.gdk.keyboard_ungrab()
-                self.window.hide()
-                gtk.main_quit()
+                self.close_window()
             else:
                 print "Invalid snippet"
         elif data.keyval == gtk.keysyms.BackSpace:
             self.snippet = self.snippet[:-1]
         elif data.keyval == gtk.keysyms.Escape:
             self.snippet = ""
-            gtk.gdk.keyboard_ungrab()
-            self.window.hide()
-            gtk.main_quit()
+            self.close_window()
         elif data.string != '':
             self.snippet = self.snippet + data.string
         self.valid_snippet = self.snippets.has_key(self.snippet)
         self.update_label()
+
+    def destroy(self, widget, data=None):
+        gtk.gdk.keyboard_ungrab()
+        gtk.main_quit()
 
     def update_label(self):
         self.label.set_text("Snippet: " + self.snippet)
@@ -150,7 +144,14 @@ class NotifyWindow:
         attrs.insert(pango.AttrSize(20000, 0, 65535))
         if self.valid_snippet:
             attrs.insert(pango.AttrForeground(0,32768,0,0,65535))
+            print self.snippets[self.snippet]['desc']
         self.label.set_attributes(attrs)
+
+    def close_window(self):
+        gtk.gdk.keyboard_ungrab()
+        self.window.hide()
+        gtk.main_quit()
+
 
 
 class KeyboardTyper:
