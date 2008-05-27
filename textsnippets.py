@@ -102,6 +102,14 @@ class NotifyWindow:
         self.window.present()
         self.window.set_keep_above(True)
         self.window.set_position(gtk.WIN_POS_CENTER_ALWAYS)
+        for i in xrange(20):
+            val = gtk.gdk.keyboard_grab(self.window.window)
+            print val
+            # TODO - get rid of magic number
+            # <enum GDK_GRAB_SUCCESS of type GdkGrabStatus>
+            if val == 0:
+                break
+            time.sleep(0.1)
         gtk.main()
         return self.snippet
 
@@ -109,11 +117,13 @@ class NotifyWindow:
         return False
 
     def destroy(self, widget, data=None):
+        gtk.gdk.keyboard_ungrab()
         gtk.main_quit()
 
     def key_press_event(self, widget, data=None):
         if data.keyval == gtk.keysyms.Return:
             if self.snippets.has_key(self.snippet):
+                gtk.gdk.keyboard_ungrab()
                 self.window.hide()
                 gtk.main_quit()
             else:
@@ -122,6 +132,7 @@ class NotifyWindow:
             self.snippet = self.snippet[:-1]
         elif data.keyval == gtk.keysyms.Escape:
             self.snippet = ""
+            gtk.gdk.keyboard_ungrab()
             self.window.hide()
             gtk.main_quit()
         elif data.string != '':
