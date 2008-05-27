@@ -18,6 +18,14 @@ import sys, time
 # Local imports
 import config
 
+# TODO
+#  - Reuse the same notify window each time (don't destroy it, just hide)
+#  - Fix the focus issue on repeated views (hopefully solved by the reuse
+#       window fix)
+#  - Fix config reloading
+#  - Add a description to the shortcut which is displayed when you type it
+#       E.g.: nc - 'Check nagios config'
+
 class TextSnippets:
 
     def __init__(self, hotkey, snippets):
@@ -28,6 +36,7 @@ class TextSnippets:
         self.hotkey = hotkey
         self.snippets = snippets
         self.typer = KeyboardTyper()
+        self.notifywindow = NotifyWindow(self.snippets)
 
     def grab_key(self, key):
         if type(key) == int:
@@ -55,8 +64,7 @@ class TextSnippets:
 
     def handle_hotkey(self):
         print "Hotkey pressed"
-        notifywindow = NotifyWindow(self.snippets)
-        snippetword = notifywindow.main()
+        snippetword = self.notifywindow.main()
         if snippetword != "":
             try:
                 snippet = self.snippets[snippetword]
@@ -84,14 +92,16 @@ class NotifyWindow:
         self.window.connect("key_press_event", self.key_press_event)
         self.window.add(self.label)
         self.label.show()
-        self.window.set_position(gtk.WIN_POS_CENTER_ALWAYS)
-        self.window.show()
         self.snippets = snippets
         self.snippet = ""
         self.valid_snippet = False
         self.update_label()
 
     def main(self):
+        self.window.show()
+        self.window.present()
+        self.window.set_keep_above(True)
+        self.window.set_position(gtk.WIN_POS_CENTER_ALWAYS)
         gtk.main()
         return self.snippet
 
@@ -104,7 +114,7 @@ class NotifyWindow:
     def key_press_event(self, widget, data=None):
         if data.keyval == gtk.keysyms.Return:
             if self.snippets.has_key(self.snippet):
-                self.window.destroy()
+                self.window.hide()
                 gtk.main_quit()
             else:
                 print "Invalid snippet"
@@ -112,7 +122,7 @@ class NotifyWindow:
             self.snippet = self.snippet[:-1]
         elif data.keyval == gtk.keysyms.Escape:
             self.snippet = ""
-            self.window.destroy()
+            self.window.hide()
             gtk.main_quit()
         elif data.string != '':
             self.snippet = self.snippet + data.string
