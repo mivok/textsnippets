@@ -79,6 +79,7 @@ class NotifyWindow:
         self.window.connect("destroy", self.destroy)
         self.window.set_border_width(0)
         self.window.set_focus_on_map(True)
+        self.window.set_decorated(False)
         self.label = gtk.Label("")
         self.window.connect("key_press_event", self.key_press_event)
         self.window.add(self.label)
