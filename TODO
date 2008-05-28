@@ -1,0 +1,6 @@
+Fix configuration file reloading
+    - remove self.snippets and use config.snippets, or manually reset
+      self.snippets on reload.
+    - config.snippets might be better
+Use ConfigParser for the config file
+    - this may cause the reloading code fix to be negated, or at least changed
