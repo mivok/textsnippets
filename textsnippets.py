@@ -19,32 +19,29 @@ import logging
 import sys, time
 
 # Local imports
-import config
-
-# TODO
-#  - Reuse the same notify window each time (don't destroy it, just hide)
-#  - Fix the focus issue on repeated views (hopefully solved by the reuse
-#       window fix)
-#  - Fix config reloading
-#  - Add a description to the shortcut which is displayed when you type it
-#       E.g.: nc - 'Check nagios config'
+#import config
+import ConfigParser
 
 class TextSnippets:
 
-    def __init__(self, hotkey, snippets):
+    def __init__(self, config):
         self.disp = Display()
         self.root = self.disp.screen().root
         self.root.change_attributes(event_mask = X.KeyPressMask)
-        self.grab_key(hotkey)
-        self.hotkey = hotkey
-        self.snippets = snippets
+        self.config = config
+        self.grab_key()
         self.typer = KeyboardTyper()
-        self.notifywindow = NotifyWindow(self.snippets)
+        self.notifywindow = NotifyWindow(self.config)
 
-    def grab_key(self, key):
-        if type(key) == int:
-            keycode = key
-        else:
+    def grab_key(self):
+        key = self.config.get('general', 'hotkey')
+        # If we have a number, then take it as a keycode, otherwise, treat it
+        # as a key name
+        try:
+            keycode = int(key)
+            logging.debug("Hotkey is a keycode: %s" % keycode)
+        except ValueError:
+            logging.debug("Hotkey is a keyname: %s" % key)
             keysym = XK.string_to_keysym(key)
             if keysym == 0:
                 logging.error("unknown key: %s" % key)
@@ -57,34 +54,48 @@ class TextSnippets:
             logging.error("Unable to set hotkey. Perhaps it is already in use.")
             logging.info("Exiting...")
             sys.exit(1)
+        else:
+            logging.debug("Successfully set hotkey")
+            self.keycode = keycode
 
     def event_loop(self):
         while 1:
             event = self.root.display.next_event()
             if event.type == X.KeyPress:
-                if event.detail == self.hotkey:
+                if event.detail == self.keycode:
                     self.handle_hotkey()
+                else:
+                    logging.debug("Key pressed: %s" % event.detail)
 
     def handle_hotkey(self):
         logging.debug("Hotkey pressed")
         snippetword = self.notifywindow.main()
         if snippetword != "":
             try:
-                snippet = self.snippets[snippetword]['text']
-            except KeyError:
+                snippet = self.config.get('snippets', snippetword)
+            except ConfigParser.NoOptionError:
                 logging.warning("Invalid snippet: snippetword")
                 return
             if snippet == 'snippet:quit':
                 sys.exit(0)
             elif snippet == 'snippet:reload':
                 logging.info("Reloading...")
-                reload(config)
+                #reload(config)
+                logging.debug("Not implemented")
             else:
-                time.sleep(config.delay)
+                try:
+                    time.sleep(float(config.get('general', 'delay')))
+                except ValueError:
+                    logging.warning("Delay %ss not valid. Defaulting to 0.1s"
+                            % config.get('general', 'delay'))
+                    time.sleep(0.1)
+                except ConfigParser.NoOptionError:
+                    logging.warning("Delay value not set, defaulting to 0.1s")
+                    time.sleep(0.1)
                 self.typer.type(snippet)
 
 class NotifyWindow:
-    def __init__(self, snippets):
+    def __init__(self, config):
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
         self.window.connect("delete_event", self.delete_event)
         self.window.connect("destroy", self.destroy)
@@ -101,7 +112,7 @@ class NotifyWindow:
         self.label.show()
         self.desclabel.show()
         self.window.connect("key_press_event", self.key_press_event)
-        self.snippets = snippets
+        self.config = config
 
     def main(self):
         self.snippet = ""
@@ -124,7 +135,7 @@ class NotifyWindow:
 
     def key_press_event(self, widget, data=None):
         if data.keyval == gtk.keysyms.Return:
-            if self.snippets.has_key(self.snippet):
+            if self.config.has_option('snippets', self.snippet):
                 self.close_window()
             else:
                 logging.warning("Invalid snippet")
@@ -135,7 +146,7 @@ class NotifyWindow:
             self.close_window()
         elif data.string != '':
             self.snippet = self.snippet + data.string
-        self.valid_snippet = self.snippets.has_key(self.snippet)
+        self.valid_snippet = self.config.has_option('snippets', self.snippet)
         self.update_label()
 
     def destroy(self, widget, data=None):
@@ -145,7 +156,11 @@ class NotifyWindow:
     def update_label(self):
         self.label.set_text("Snippet: " + self.snippet)
         if self.valid_snippet:
-            self.desclabel.set_text(self.snippets[self.snippet]['desc'])
+            try:
+                self.desclabel.set_text(self.config.get('snippets',
+                    self.snippet + 'desc'))
+            except ConfigParser.NoOptionError:
+                self.desclabel.set_text("")
         else:
             self.desclabel.set_text("")
         self.set_label_font()
@@ -162,8 +177,6 @@ class NotifyWindow:
         gtk.gdk.keyboard_ungrab()
         self.window.hide()
         gtk.main_quit()
-
-
 
 class KeyboardTyper:
     def __init__(self):
@@ -225,7 +238,10 @@ if __name__ == '__main__':
     try:
         logging.basicConfig(level=logging.DEBUG,
             format='%(asctime)s %(levelname)s %(message)s')
-        ts = TextSnippets(config.hotkey, config.snippets)
+        config = ConfigParser.SafeConfigParser()
+        config.read(['defaults', '/etc/textsnippetsrc',
+            '~/.textsnippetsrc'])
+        ts = TextSnippets(config)
         ts.event_loop()
     except KeyboardInterrupt:
         logging.info("Exiting...")

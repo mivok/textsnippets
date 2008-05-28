@@ -1,5 +1,4 @@
-# Configuration
-
+[general]
 ## Hotkey to use
 # Can use a name or integer here
 # 227 - Menu key on my laptop - Menu doesn't work
@@ -14,10 +13,9 @@ delay = 0.1
 # Here are the actual snippets
 # The special snippet values snippet:quit and snippet:reload quit the program
 # and reload the config file respectively
-snippets = {
-    'quit': 'snippet:quit',
-    'reload': 'snippet:reload',
-    'test': 'Testing 1..2..3',
-    'hi': 'Hello World!',
-    'sym': '!@#$%^&*()-=_+[]{};\':"<>,./?|\\`~'
-}
+[snippets]
+quit=snippet:quit
+reload=snippet:reload
+test=Testing 1..2..3
+hi=Hello World!
+sym=!@#$%^&*()-=_+[]{};\':"<>,./?|\\`~
