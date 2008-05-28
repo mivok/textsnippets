@@ -89,10 +89,16 @@ class NotifyWindow:
         self.window.set_border_width(0)
         self.window.set_focus_on_map(True)
         self.window.set_decorated(False)
+        self.box = gtk.VBox()
         self.label = gtk.Label("")
-        self.window.connect("key_press_event", self.key_press_event)
-        self.window.add(self.label)
+        self.box.add(self.label)
+        self.desclabel = gtk.Label("")
+        self.box.add(self.desclabel)
+        self.window.add(self.box)
+        self.box.show()
         self.label.show()
+        self.desclabel.show()
+        self.window.connect("key_press_event", self.key_press_event)
         self.snippets = snippets
 
     def main(self):
@@ -136,6 +142,10 @@ class NotifyWindow:
 
     def update_label(self):
         self.label.set_text("Snippet: " + self.snippet)
+        if self.valid_snippet:
+            self.desclabel.set_text(self.snippets[self.snippet]['desc'])
+        else:
+            self.desclabel.set_text("")
         self.set_label_font()
 
     def set_label_font(self):
@@ -144,7 +154,6 @@ class NotifyWindow:
         attrs.insert(pango.AttrSize(20000, 0, 65535))
         if self.valid_snippet:
             attrs.insert(pango.AttrForeground(0,32768,0,0,65535))
-            print self.snippets[self.snippet]['desc']
         self.label.set_attributes(attrs)
 
     def close_window(self):
