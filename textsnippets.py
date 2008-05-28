@@ -14,6 +14,8 @@ from gtk import gdk
 import gobject
 import pango
 
+import logging
+
 import sys, time
 
 # Local imports
@@ -45,15 +47,15 @@ class TextSnippets:
         else:
             keysym = XK.string_to_keysym(key)
             if keysym == 0:
-                print "Error, unknown key: %s" % key
+                logging.error("unknown key: %s" % key)
             keycode = self.disp.keysym_to_keycode(keysym)
         ec = error.CatchError(error.BadAccess)
         self.root.grab_key(keycode,
             X.AnyModifier, 1, X.GrabModeAsync, X.GrabModeAsync, onerror=ec)
         self.disp.sync()
         if ec.get_error():
-            print "Unable to set hotkey. Perhaps it is already in use."
-            print "Exiting..."
+            logging.error("Unable to set hotkey. Perhaps it is already in use.")
+            logging.info("Exiting...")
             sys.exit(1)
 
     def event_loop(self):
@@ -64,18 +66,18 @@ class TextSnippets:
                     self.handle_hotkey()
 
     def handle_hotkey(self):
-        print "Hotkey pressed"
+        logging.debug("Hotkey pressed")
         snippetword = self.notifywindow.main()
         if snippetword != "":
             try:
                 snippet = self.snippets[snippetword]['text']
             except KeyError:
-                print "Invalid snippet: snippetword"
+                logging.warning("Invalid snippet: snippetword")
                 return
             if snippet == 'snippet:quit':
                 sys.exit(0)
             elif snippet == 'snippet:reload':
-                print "Reloading..."
+                logging.info("Reloading...")
                 reload(config)
             else:
                 time.sleep(config.delay)
@@ -125,7 +127,7 @@ class NotifyWindow:
             if self.snippets.has_key(self.snippet):
                 self.close_window()
             else:
-                print "Invalid snippet"
+                logging.warning("Invalid snippet")
         elif data.keyval == gtk.keysyms.BackSpace:
             self.snippet = self.snippet[:-1]
         elif data.keyval == gtk.keysyms.Escape:
@@ -221,8 +223,10 @@ class KeyboardTyper:
 
 if __name__ == '__main__':
     try:
+        logging.basicConfig(level=logging.DEBUG,
+            format='%(asctime)s %(levelname)s %(message)s')
         ts = TextSnippets(config.hotkey, config.snippets)
         ts.event_loop()
     except KeyboardInterrupt:
-        print "Exiting..."
+        logging.info("Exiting...")
         sys.exit(0)
