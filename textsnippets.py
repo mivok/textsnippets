@@ -16,7 +16,7 @@ import pango
 
 import logging
 
-import sys, time
+import os, sys, time
 
 # Local imports
 #import config
@@ -239,8 +239,16 @@ if __name__ == '__main__':
         logging.basicConfig(level=logging.DEBUG,
             format='%(asctime)s %(levelname)s %(message)s')
         config = ConfigParser.SafeConfigParser()
-        config.read(['defaults', '/etc/textsnippetsrc',
-            '~/.textsnippetsrc'])
+        try:
+            config.readfp(open(sys.path[0] + "/defaults"))
+            logging.debug("Loaded default configuration")
+        except IOError:
+            logging.error("Unable to load default configuraiton. The program"
+                    " may not work correctly.")
+
+        files = config.read(['/etc/textsnippetsrc',
+            os.path.expanduser('~/.textsnippetsrc')])
+        logging.debug("Loaded config files: %s" % ', '.join(files))
         ts = TextSnippets(config)
         ts.event_loop()
     except KeyboardInterrupt:
