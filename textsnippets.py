@@ -101,8 +101,8 @@ class NotifyWindow:
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
         self.window.connect("delete_event", self.delete_event)
         self.window.connect("destroy", self.destroy)
+        self.window.set_type_hint(gtk.gdk.WINDOW_TYPE_HINT_SPLASHSCREEN)
         self.window.set_border_width(0)
-        self.window.set_focus_on_map(True)
         self.window.set_decorated(False)
         self.box = gtk.VBox()
         self.label = gtk.Label("")
@@ -120,6 +120,8 @@ class NotifyWindow:
         self.snippet = ""
         self.valid_snippet = False
         self.update_label()
+        # Shrink the window to be the width of the text
+        self.window.resize(1,1)
         self.window.show()
         self.window.present()
         self.window.set_keep_above(True)
