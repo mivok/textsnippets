@@ -84,7 +84,9 @@ class TextSnippets:
                 logging.debug("Not implemented")
             else:
                 try:
-                    time.sleep(float(config.get('general', 'delay')))
+                    delay = config.getfloat('general', 'delay')
+                    time.sleep(delay)
+                    logging.debug("Delaying for %ss" % delay)
                 except ValueError:
                     logging.warning("Delay %ss not valid. Defaulting to 0.1s"
                             % config.get('general', 'delay'))
@@ -237,7 +239,8 @@ class KeyboardTyper:
 if __name__ == '__main__':
     try:
         logging.basicConfig(level=logging.DEBUG,
-            format='%(asctime)s %(levelname)s %(message)s')
+            format='%(asctime)s %(levelname)s %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S')
         config = ConfigParser.SafeConfigParser()
         try:
             config.readfp(open(sys.path[0] + "/defaults"))
