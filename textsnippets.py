@@ -79,9 +79,9 @@ class TextSnippets:
             if snippet == 'snippet:quit':
                 sys.exit(0)
             elif snippet == 'snippet:reload':
-                logging.info("Reloading...")
-                #reload(config)
-                logging.debug("Not implemented")
+                logging.info("Reloading user configuration")
+                files = config.read([os.path.expanduser('~/.textsnippetsrc')])
+                logging.debug("Reloaded config files: %s" % ', '.join(files))
             else:
                 try:
                     delay = config.getfloat('general', 'delay')
