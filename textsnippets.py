@@ -35,6 +35,41 @@ class TextSnippets:
 
     def grab_key(self):
         key = self.config.get('general', 'hotkey')
+        modifiers = self.config.get('general', 'modifiers').lower()
+        if modifiers == 'none':
+            logging.debug("Setting modifier keys to Any")
+            modmask = X.AnyModifier
+        else:
+            modmasks = {
+                'ctrl':     X.ControlMask,
+                'control':  X.ControlMask,
+                'c':        X.ControlMask,
+                'shift':    X.ShiftMask,
+                's':        X.ShiftMask,
+                'alt':      X.Mod1Mask,
+                'a':        X.Mod1Mask,
+                'meta':     X.Mod1Mask,
+                'm':        X.Mod1Mask,
+                'super':    X.Mod4Mask,
+                'win':      X.Mod4Mask,
+                'w':        X.Mod4Mask,
+                'windows':  X.Mod4Mask,
+                'mod1':     X.Mod1Mask,
+                'mod2':     X.Mod2Mask,
+                'mod3':     X.Mod3Mask,
+                'mod4':     X.Mod4Mask,
+                'mod5':     X.Mod5Mask
+            }
+            modmask = 0
+            modlist = modifiers.split('+')
+            logging.debug("Modifiers are: %s" % ', '.join(modlist))
+            for mod in modlist:
+                try:
+                    modmask |= modmasks[mod]
+                except KeyError:
+                    logging.error('Invalid modifier key: %s. Ignoring this key'
+                            % mod)
+            logging.debug("Modmask is: %s" % modmask)
         # If we have a number, then take it as a keycode, otherwise, treat it
         # as a key name
         try:
@@ -47,8 +82,8 @@ class TextSnippets:
                 logging.error("unknown key: %s" % key)
             keycode = self.disp.keysym_to_keycode(keysym)
         ec = error.CatchError(error.BadAccess)
-        self.root.grab_key(keycode,
-            X.AnyModifier, 1, X.GrabModeAsync, X.GrabModeAsync, onerror=ec)
+        self.root.grab_key(keycode, modmask, 1, X.GrabModeAsync,
+                X.GrabModeAsync, onerror=ec)
         self.disp.sync()
         if ec.get_error():
             logging.error("Unable to set hotkey. Perhaps it is already in use.")

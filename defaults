@@ -1,9 +1,9 @@
 # vim: ft=desktop tw=0
 [general]
 # Hotkey to use
-# Can use a name or integer here
-# hotkey = "Menu"
-hotkey=227
+# Default is super+space (super is the windows key)
+hotkey=Space
+modifiers=super
 
 ## Time to wait before starting to type
 # If you find that you are missing the beginning of snippets, then increase
