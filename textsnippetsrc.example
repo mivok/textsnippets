@@ -1,10 +1,13 @@
 # vim: ft=desktop tw=0
 [general]
 ## Hotkey to use
-# Can use a name or integer here
-# 227 - Menu key on my laptop - Menu doesn't work
-# hotkey = "Menu"
-hotkey = 227
+# Can use a name or keycode here. Use xev to get the keycode or keyname
+hotkey = space
+# Modifiers
+# Valid values are: ctrl, shift, alt, meta, super, win, windows
+#                   mod1, mod2, mod3, mod4, mod5
+# You can use C,S,A,M,W instead of ctrl, shift, alt, meta, windows
+modifiers = super
 
 ## Time to wait before starting to type
 # If you find that you are missing the beginning of snippets, then increase
