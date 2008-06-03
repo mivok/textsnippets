@@ -1,6 +1,25 @@
-Fix configuration file reloading
-    - remove self.snippets and use config.snippets, or manually reset
-      self.snippets on reload.
-    - config.snippets might be better
-Use ConfigParser for the config file
-    - this may cause the reloading code fix to be negated, or at least changed
+Add options
+    - -d daemon
+    - config file location
+    - debug mode
+
+Add daemon option
+    - automatically log errors to a file
+    - perhaps have some way of logging to a window?
+        - Log to in memory file (stringIO)
+        - Show a textbox containing this file when an error occurs
+
+Logging
+    - log level
+    - file to output to
+
+Add a post-correct hotkey and autocorrection:
+    - This will grab keys one by one, using the keytree code that was previously
+    removed (<3 version control)
+    - Type backspace n times in order for it to delete the old keys
+
+Support for typing special keys
+    - newlines
+    - Tab
+    - modifiers
+    - F keys
