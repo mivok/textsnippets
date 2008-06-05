@@ -98,7 +98,7 @@ class TextSnippets:
                 sys.exit(0)
             elif snippet == 'snippet:reload':
                 logging.info("Reloading user configuration")
-                files = config.read([os.path.expanduser('~/.textsnippetsrc')])
+                files = self.config.read([os.path.expanduser('~/.textsnippetsrc')])
                 logging.debug("Reloaded config files: %s" % ', '.join(files))
             else:
                 try:
