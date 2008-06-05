@@ -16,7 +16,7 @@ import pango
 
 import logging
 
-import os, sys, time
+import getopt, os, sys, time
 
 # Local imports
 #import config
@@ -25,16 +25,21 @@ import ConfigParser
 class TextSnippets:
 
     def __init__(self):
+        self.get_options()
         self.init_logger()
         self.load_config()
         self.typer = KeyboardTyper()
         self.hotkey = Hotkey(self.config, self.handle_hotkey,
-            hotkey = self.config.get('general', 'hotkey'),
-            modifiers = self.config.get('general', 'modifiers').lower())
+                hotkey = self.config.get('general', 'hotkey'),
+                modifiers = self.config.get('general', 'modifiers').lower())
         self.notifywindow = NotifyWindow(self.config)
 
     def init_logger(self):
-        logging.basicConfig(level=logging.DEBUG,
+        if self.options['debug']:
+            level=logging.DEBUG
+        else:
+            level=logging.INFO
+        logging.basicConfig(level=level,
             format='%(asctime)s %(levelname)s %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S')
 
@@ -47,9 +52,35 @@ class TextSnippets:
             logging.error("Unable to load default configuraiton. The program"
                     " may not work correctly.")
 
-        files = self.config.read(['/etc/textsnippetsrc',
-            os.path.expanduser('~/.textsnippetsrc')])
+        if self.options['conffile']:
+            filelist = self.options['conffile']
+        else:
+            filelist = ['/etc/textsnippetsrc',
+                    os.path.expanduser('~/.textsnippetsrc')]
+        files = self.config.read(filelist)
         logging.debug("Loaded config files: %s" % ', '.join(files))
+
+    def get_options(self):
+        self.options = {
+            'debug': False,
+            'conffile': None
+        }
+        try:
+            opts, args = getopt.getopt(sys.argv[1:], "d", ['debug'])
+        except getopt.GetoptError, e:
+            print str(e)
+            print "Usage: %s [-d|--debug] [-c configfile|--config=filename]" % (
+                    sys.argv[0])
+            sys.exit(2)
+
+        for o, a in opts:
+            if o == '-d' or o == '--debug':
+                self.options['debug'] = True
+            elif o == '-c' or o == '--config':
+                self.options['conffile'] = a
+            else:
+                print "Unhandled option: %s" % o
+                sys.exit(1)
 
     def start(self):
         self.hotkey.event_loop()
