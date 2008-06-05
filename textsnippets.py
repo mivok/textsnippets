@@ -24,18 +24,75 @@ import ConfigParser
 
 class TextSnippets:
 
-    def __init__(self, config):
+    def __init__(self):
+        self.init_logger()
+        self.load_config()
+        self.typer = KeyboardTyper()
+        self.hotkey = Hotkey(self.config, self.handle_hotkey,
+            hotkey = self.config.get('general', 'hotkey'),
+            modifiers = self.config.get('general', 'modifiers').lower())
+        self.notifywindow = NotifyWindow(self.config)
+
+    def init_logger(self):
+        logging.basicConfig(level=logging.DEBUG,
+            format='%(asctime)s %(levelname)s %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S')
+
+    def load_config(self):
+        self.config = ConfigParser.SafeConfigParser()
+        try:
+            self.config.readfp(open(sys.path[0] + "/defaults"))
+            logging.debug("Loaded default configuration")
+        except IOError:
+            logging.error("Unable to load default configuraiton. The program"
+                    " may not work correctly.")
+
+        files = self.config.read(['/etc/textsnippetsrc',
+            os.path.expanduser('~/.textsnippetsrc')])
+        logging.debug("Loaded config files: %s" % ', '.join(files))
+
+    def start(self):
+        self.hotkey.event_loop()
+
+    def handle_hotkey(self):
+        logging.debug("Hotkey pressed")
+        snippetword = self.notifywindow.main()
+        if snippetword != "":
+            try:
+                snippet = self.config.get('snippets', snippetword)
+            except ConfigParser.NoOptionError:
+                logging.warning("Invalid snippet: snippetword")
+                return
+            if snippet == 'snippet:quit':
+                sys.exit(0)
+            elif snippet == 'snippet:reload':
+                logging.info("Reloading user configuration")
+                files = config.read([os.path.expanduser('~/.textsnippetsrc')])
+                logging.debug("Reloaded config files: %s" % ', '.join(files))
+            else:
+                try:
+                    delay = self.config.getfloat('general', 'delay')
+                    time.sleep(delay)
+                    logging.debug("Delaying for %ss" % delay)
+                except ValueError:
+                    logging.warning("Delay %ss not valid. Defaulting to 0.1s"
+                            % config.get('general', 'delay'))
+                    time.sleep(0.1)
+                except ConfigParser.NoOptionError:
+                    logging.warning("Delay value not set, defaulting to 0.1s")
+                    time.sleep(0.1)
+                self.typer.type(snippet)
+
+class Hotkey:
+    def __init__(self, config, handler, hotkey, modifiers):
         self.disp = Display()
         self.root = self.disp.screen().root
         self.root.change_attributes(event_mask = X.KeyPressMask)
+        self.handler = handler
         self.config = config
-        self.grab_key()
-        self.typer = KeyboardTyper()
-        self.notifywindow = NotifyWindow(self.config)
+        self.grab_key(hotkey, modifiers)
 
-    def grab_key(self):
-        key = self.config.get('general', 'hotkey')
-        modifiers = self.config.get('general', 'modifiers').lower()
+    def grab_key(self, hotkey, modifiers):
         if modifiers == 'none':
             logging.debug("Setting modifier keys to Any")
             modmask = X.AnyModifier
@@ -73,13 +130,13 @@ class TextSnippets:
         # If we have a number, then take it as a keycode, otherwise, treat it
         # as a key name
         try:
-            keycode = int(key)
+            keycode = int(hotkey)
             logging.debug("Hotkey is a keycode: %s" % keycode)
         except ValueError:
-            logging.debug("Hotkey is a keyname: %s" % key)
-            keysym = XK.string_to_keysym(key)
+            logging.debug("Hotkey is a keyname: %s" % hotkey)
+            keysym = XK.string_to_keysym(hotkey)
             if keysym == 0:
-                logging.error("unknown key: %s" % key)
+                logging.error("unknown key: %s" % hotkey)
             keycode = self.disp.keysym_to_keycode(keysym)
         ec = error.CatchError(error.BadAccess)
         self.root.grab_key(keycode, modmask, 1, X.GrabModeAsync,
@@ -98,38 +155,9 @@ class TextSnippets:
             event = self.root.display.next_event()
             if event.type == X.KeyPress:
                 if event.detail == self.keycode:
-                    self.handle_hotkey()
+                    self.handler()
                 else:
                     logging.debug("Key pressed: %s" % event.detail)
-
-    def handle_hotkey(self):
-        logging.debug("Hotkey pressed")
-        snippetword = self.notifywindow.main()
-        if snippetword != "":
-            try:
-                snippet = self.config.get('snippets', snippetword)
-            except ConfigParser.NoOptionError:
-                logging.warning("Invalid snippet: snippetword")
-                return
-            if snippet == 'snippet:quit':
-                sys.exit(0)
-            elif snippet == 'snippet:reload':
-                logging.info("Reloading user configuration")
-                files = config.read([os.path.expanduser('~/.textsnippetsrc')])
-                logging.debug("Reloaded config files: %s" % ', '.join(files))
-            else:
-                try:
-                    delay = config.getfloat('general', 'delay')
-                    time.sleep(delay)
-                    logging.debug("Delaying for %ss" % delay)
-                except ValueError:
-                    logging.warning("Delay %ss not valid. Defaulting to 0.1s"
-                            % config.get('general', 'delay'))
-                    time.sleep(0.1)
-                except ConfigParser.NoOptionError:
-                    logging.warning("Delay value not set, defaulting to 0.1s")
-                    time.sleep(0.1)
-                self.typer.type(snippet)
 
 class NotifyWindow:
     def __init__(self, config):
@@ -272,25 +300,10 @@ class KeyboardTyper:
                             self.key_modifiers[wrap_key_index])
                         kskc[keysym] = keycode
 
-
 if __name__ == '__main__':
     try:
-        logging.basicConfig(level=logging.DEBUG,
-            format='%(asctime)s %(levelname)s %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S')
-        config = ConfigParser.SafeConfigParser()
-        try:
-            config.readfp(open(sys.path[0] + "/defaults"))
-            logging.debug("Loaded default configuration")
-        except IOError:
-            logging.error("Unable to load default configuraiton. The program"
-                    " may not work correctly.")
-
-        files = config.read(['/etc/textsnippetsrc',
-            os.path.expanduser('~/.textsnippetsrc')])
-        logging.debug("Loaded config files: %s" % ', '.join(files))
-        ts = TextSnippets(config)
-        ts.event_loop()
+        ts = TextSnippets()
+        ts.start()
     except KeyboardInterrupt:
         logging.info("Exiting...")
         sys.exit(0)
