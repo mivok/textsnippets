@@ -42,6 +42,8 @@ class TextSnippets:
         logging.basicConfig(level=level,
             format='%(asctime)s %(levelname)s %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S')
+        logging.info("Textsnippets Starting...")
+        logging.debug("Debugging mode on")
 
     def load_config(self):
         self.config = ConfigParser.SafeConfigParser()
@@ -66,7 +68,8 @@ class TextSnippets:
             'conffile': None
         }
         try:
-            opts, args = getopt.getopt(sys.argv[1:], "d", ['debug'])
+            opts, args = getopt.getopt(sys.argv[1:], "dc:",
+                    ['debug', 'conffile='])
         except getopt.GetoptError, e:
             print str(e)
             print "Usage: %s [-d|--debug] [-c configfile|--config=filename]" % (
@@ -98,7 +101,9 @@ class TextSnippets:
                 sys.exit(0)
             elif snippet == 'snippet:reload':
                 logging.info("Reloading user configuration")
-                files = self.config.read([os.path.expanduser('~/.textsnippetsrc')])
+                conffile = self.options['conffile'] or os.path.expanduser(
+                        '~/.textsnippetsrc')
+                files = self.config.read([conffile])
                 logging.debug("Reloaded config files: %s" % ', '.join(files))
             else:
                 try:
