@@ -1,8 +1,3 @@
-Add options
-    - -d daemon
-    - config file location
-    - debug mode
-
 Add daemon option
     - automatically log errors to a file
     - perhaps have some way of logging to a window?
@@ -10,8 +5,8 @@ Add daemon option
         - Show a textbox containing this file when an error occurs
 
 Logging
-    - log level
     - file to output to
+    - Perhaps a gui messages viewer
 
 Add a post-correct hotkey and autocorrection:
     - This will grab keys one by one, using the keytree code that was previously
