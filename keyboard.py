@@ -84,7 +84,7 @@ class Hotkey:
         if self.root.display.pending_events() > 0:
             self.__process_event(self.root.display.next_event())
 
-    def __process_event(self, event)
+    def __process_event(self, event):
         """Processes a hotkey event"""
         if event.type == X.KeyPress:
             if event.detail == self.keycode:
