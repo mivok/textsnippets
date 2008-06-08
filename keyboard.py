@@ -71,13 +71,26 @@ class Hotkey:
             return keycode
 
     def event_loop(self):
+        """Loop until a hotkey is pressed. This will block until the hotkey is
+        pressed. Use event_callback instead if you want a non-blocking
+        implementation that does a single check to see if a key has been
+        pressed."""
         while 1:
-            event = self.root.display.next_event()
-            if event.type == X.KeyPress:
-                if event.detail == self.keycode:
-                    self.handler()
-                else:
-                    logging.debug("Key pressed: %s" % event.detail)
+            self.__process_event(self.root.display.next_event())
+
+    def event_callback(self):
+        """Checks to see if any events are waiting (i.e. if the hotkey was
+        pressed. If so, then process it, otherwise do nothing and return."""
+        if self.root.display.pending_events() > 0:
+            self.__process_event(self.root.display.next_event())
+
+    def __process_event(self, event)
+        """Processes a hotkey event"""
+        if event.type == X.KeyPress:
+            if event.detail == self.keycode:
+                self.handler()
+            else:
+                logging.debug("Key pressed: %s" % event.detail)
 
 class KeyboardTyper:
     def __init__(self):
@@ -86,14 +99,7 @@ class KeyboardTyper:
         self.keysym_to_keycode_map = {}
         self.key_modifiers = (None, "Shift_L", "ISO_Level3_Shift", None, None,
                 None)
-        self.load_keycodes()
-
-    def str_to_keycode(self, str):
-        if str is None:
-            return None
-        keysym = XK.string_to_keysym(str)
-        keycode = self.disp.keysym_to_keycode(keysym)
-        return keycode
+        self.__load_keycodes()
 
     def type(self, text):
         for char in text:
@@ -111,7 +117,7 @@ class KeyboardTyper:
                 xtest.fake_input(self.disp, X.KeyRelease, wrap_key)
             self.disp.sync()
 
-    def load_keycodes(self):
+    def __load_keycodes(self):
         d = self.disp
         ksmm = self.keysym_to_modifier_map
         kskc = self.keysym_to_keycode_map
@@ -130,6 +136,13 @@ class KeyboardTyper:
                     keysym = curr[wrap_key_index]
                     keycode = keycode_index + min_keycode
                     if not ksmm.has_key(keysym):
-                        ksmm[keysym] = self.str_to_keycode(
+                        ksmm[keysym] = self.__str_to_keycode(
                             self.key_modifiers[wrap_key_index])
                         kskc[keysym] = keycode
+
+    def __str_to_keycode(self, str):
+        if str is None:
+            return None
+        keysym = XK.string_to_keysym(str)
+        keycode = self.disp.keysym_to_keycode(keysym)
+        return keycode
