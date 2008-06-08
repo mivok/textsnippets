@@ -10,6 +10,12 @@ modifiers=super
 # this a little.
 delay = 0.1
 
+[appearance]
+font=FreeSans
+size=24
+validcolor=#007700
+invalidcolor=black
+
 [snippets]
 quit=snippet:quit
 quitdesc=Exit textsnippets

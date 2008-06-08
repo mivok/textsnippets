@@ -70,7 +70,7 @@ class NotifyWindow:
         gtk.main_quit()
 
     def update_label(self):
-        self.label.set_text("Snippet: " + self.snippet)
+        self.label.set_markup(self.markup("Snippet: " + self.snippet))
         if self.valid_snippet:
             try:
                 self.desclabel.set_text(self.config.get('snippets',
@@ -79,15 +79,18 @@ class NotifyWindow:
                 self.desclabel.set_text("")
         else:
             self.desclabel.set_text("")
-        self.set_label_font()
 
-    def set_label_font(self):
-        attrs = pango.AttrList()
-        attrs.insert(pango.AttrFamily("Bitstream Vera Sans", 0, 65535))
-        attrs.insert(pango.AttrSize(20000, 0, 65535))
+    def markup(self, text):
+        """Marks up the text with the configured font and color depending on
+        whether there is a match or not."""
         if self.valid_snippet:
-            attrs.insert(pango.AttrForeground(0,32768,0,0,65535))
-        self.label.set_attributes(attrs)
+            color = self.config.get('appearance', 'validcolor')
+        else:
+            color = self.config.get('appearance', 'invalidcolor')
+        return '<span font_family="%s" size="%s" color="%s">%s</span>' % (
+                self.config.get('appearance', 'font'),
+                self.config.getint('appearance', 'size') * 1024,
+                color,text)
 
     def close_window(self):
         gtk.gdk.keyboard_ungrab()
