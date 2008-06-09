@@ -32,12 +32,11 @@ class NotifyWindow:
         self.snippet = ""
         self.valid_snippet = False
         self.update_label()
-        # Shrink the window to be the width of the text
-        self.window.resize(1,1)
+        self.window.resize(1,1) # Shrink the window to width of the text
+        self.window.set_position(gtk.WIN_POS_CENTER_ALWAYS)
+        self.window.set_keep_above(True)
         self.window.show()
         self.window.present()
-        self.window.set_keep_above(True)
-        self.window.set_position(gtk.WIN_POS_CENTER_ALWAYS)
         for i in xrange(20):
             val = gtk.gdk.keyboard_grab(self.window.window)
             if val == gtk.gdk.GRAB_SUCCESS:
@@ -79,6 +78,7 @@ class NotifyWindow:
                 self.desclabel.set_text("")
         else:
             self.desclabel.set_text("")
+        self.window.resize(1,1) # Shrink the window to width of the text
 
     def markup(self, text):
         """Marks up the text with the configured font and color depending on
