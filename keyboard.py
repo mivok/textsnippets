@@ -83,6 +83,7 @@ class Hotkey:
         pressed. If so, then process it, otherwise do nothing and return."""
         if self.root.display.pending_events() > 0:
             self._process_event(self.root.display.next_event())
+        return True
 
     def _process_event(self, event):
         """Processes a hotkey event"""

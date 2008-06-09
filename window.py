@@ -8,6 +8,19 @@ from gtk import gdk
 import gobject
 import pango
 
+class Gui:
+    def __init__(self, config):
+        self.config = config
+
+    def start(self):
+        gtk.main()
+
+    def stop(self):
+        gtk.main_quit()
+
+    def add_idle_func(self, func):
+        gobject.timeout_add(100, func)
+
 class NotifyWindow:
     def __init__(self, config):
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
@@ -28,7 +41,8 @@ class NotifyWindow:
         self.window.connect("key_press_event", self.key_press_event)
         self.config = config
 
-    def main(self):
+    def main(self, callback):
+        self.callback = callback
         self.snippet = ""
         self.valid_snippet = False
         self.update_label()
@@ -42,8 +56,6 @@ class NotifyWindow:
             if val == gtk.gdk.GRAB_SUCCESS:
                 break
             time.sleep(0.1)
-        gtk.main()
-        return self.snippet
 
     def delete_event(self, widget, event, data=None):
         return False
@@ -66,7 +78,6 @@ class NotifyWindow:
 
     def destroy(self, widget, data=None):
         gtk.gdk.keyboard_ungrab()
-        gtk.main_quit()
 
     def update_label(self):
         self.label.set_markup(self.markup("Snippet: " + self.snippet))
@@ -95,5 +106,20 @@ class NotifyWindow:
     def close_window(self):
         gtk.gdk.keyboard_ungrab()
         self.window.hide()
-        gtk.main_quit()
+        if self.callback:
+            # TODO - make a generic config.get function with defaults + error
+            # messages for missing and invalid values (invalid only matters on
+            # getint getfloat etc.
+            try:
+                delay = self.config.getfloat('general', 'delay')
+                logging.debug("Delay set to %ss" % delay)
+                delay = int(delay * 1000)
+            except ValueError:
+                logging.warning("Delay %ss not valid. Defaulting to 0.1s"
+                        % config.get('general', 'delay'))
+                delay = 1000
+            except ConfigParser.NoOptionError:
+                logging.warning("Delay value not set, defaulting to 0.1s")
+                delay = 1000
+            gobject.timeout_add(delay, self.callback, self.snippet)
 

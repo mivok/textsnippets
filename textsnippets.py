@@ -8,7 +8,7 @@ import sys
 import time
 
 from keyboard import KeyboardTyper, Hotkey
-from window import NotifyWindow
+from window import Gui, NotifyWindow
 
 class TextSnippets:
 
@@ -19,6 +19,7 @@ class TextSnippets:
         self.typer = KeyboardTyper()
         self.hotkey = Hotkey(self.config, self.handle_hotkey)
         self.notifywindow = NotifyWindow(self.config)
+        self.gui = Gui(self.config)
 
     def init_logger(self):
         if self.options['debug']:
@@ -75,7 +76,8 @@ class TextSnippets:
         if self.hotkey.grab_key(hotkey = self.config.get('general', 'hotkey'),
                 modifiers = self.config.get('general', 'modifiers').lower()):
             logging.debug("Successfully set hotkey")
-            self.hotkey.event_loop()
+            self.gui.add_idle_func(self.hotkey.event_callback)
+            self.gui.start()
         else:
             logging.critical("Unable to set hotkey. "
                     "Perhaps it is already in use?")
@@ -84,7 +86,9 @@ class TextSnippets:
 
     def handle_hotkey(self):
         logging.debug("Hotkey pressed")
-        snippetword = self.notifywindow.main()
+        self.notifywindow.main(self.process_snippet)
+
+    def process_snippet(self, snippetword):
         if snippetword != "":
             try:
                 snippet = self.config.get('snippets', snippetword)
@@ -100,17 +104,17 @@ class TextSnippets:
                 files = self.config.read([conffile])
                 logging.debug("Reloaded config files: %s" % ', '.join(files))
             else:
-                try:
-                    delay = self.config.getfloat('general', 'delay')
-                    time.sleep(delay)
-                    logging.debug("Delaying for %ss" % delay)
-                except ValueError:
-                    logging.warning("Delay %ss not valid. Defaulting to 0.1s"
-                            % config.get('general', 'delay'))
-                    time.sleep(0.1)
-                except ConfigParser.NoOptionError:
-                    logging.warning("Delay value not set, defaulting to 0.1s")
-                    time.sleep(0.1)
+                #try:
+                #    delay = self.config.getfloat('general', 'delay')
+                #    time.sleep(delay)
+                #    logging.debug("Delaying for %ss" % delay)
+                #except ValueError:
+                #    logging.warning("Delay %ss not valid. Defaulting to 0.1s"
+                #            % config.get('general', 'delay'))
+                #    time.sleep(0.1)
+                #except ConfigParser.NoOptionError:
+                #    logging.warning("Delay value not set, defaulting to 0.1s")
+                #    time.sleep(0.1)
                 self.typer.type(snippet)
 
 if __name__ == '__main__':
