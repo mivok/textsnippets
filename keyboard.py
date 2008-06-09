@@ -1,10 +1,10 @@
+import logging
+
 from Xlib.display import Display
 from Xlib import error
 from Xlib import X
 from Xlib import XK
 from Xlib.ext import xtest
-
-import logging
 
 class Hotkey:
     def __init__(self, config, handler):
@@ -76,15 +76,15 @@ class Hotkey:
         implementation that does a single check to see if a key has been
         pressed."""
         while 1:
-            self.__process_event(self.root.display.next_event())
+            self._process_event(self.root.display.next_event())
 
     def event_callback(self):
         """Checks to see if any events are waiting (i.e. if the hotkey was
         pressed. If so, then process it, otherwise do nothing and return."""
         if self.root.display.pending_events() > 0:
-            self.__process_event(self.root.display.next_event())
+            self._process_event(self.root.display.next_event())
 
-    def __process_event(self, event):
+    def _process_event(self, event):
         """Processes a hotkey event"""
         if event.type == X.KeyPress:
             if event.detail == self.keycode:
@@ -99,7 +99,7 @@ class KeyboardTyper:
         self.keysym_to_keycode_map = {}
         self.key_modifiers = (None, "Shift_L", "ISO_Level3_Shift", None, None,
                 None)
-        self.__load_keycodes()
+        self._load_keycodes()
 
     def type(self, text):
         for char in text:
@@ -117,7 +117,7 @@ class KeyboardTyper:
                 xtest.fake_input(self.disp, X.KeyRelease, wrap_key)
             self.disp.sync()
 
-    def __load_keycodes(self):
+    def _load_keycodes(self):
         d = self.disp
         ksmm = self.keysym_to_modifier_map
         kskc = self.keysym_to_keycode_map
@@ -136,11 +136,11 @@ class KeyboardTyper:
                     keysym = curr[wrap_key_index]
                     keycode = keycode_index + min_keycode
                     if not ksmm.has_key(keysym):
-                        ksmm[keysym] = self.__str_to_keycode(
+                        ksmm[keysym] = self._str_to_keycode(
                             self.key_modifiers[wrap_key_index])
                         kskc[keysym] = keycode
 
-    def __str_to_keycode(self, str):
+    def _str_to_keycode(self, str):
         if str is None:
             return None
         keysym = XK.string_to_keysym(str)

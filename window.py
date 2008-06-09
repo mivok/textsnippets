@@ -1,12 +1,12 @@
+import logging
+import time
+
 import pygtk
 pygtk.require('2.0')
 import gtk
 from gtk import gdk
 import gobject
 import pango
-
-import logging
-import time
 
 class NotifyWindow:
     def __init__(self, config):

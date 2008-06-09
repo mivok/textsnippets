@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
-# System imports
-import logging
-
-import getopt, os, sys, time
-
-# Local imports
 import ConfigParser
+import getopt
+import logging
+import os
+import sys
+import time
+
 from keyboard import KeyboardTyper, Hotkey
 from window import NotifyWindow
 
