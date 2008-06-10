@@ -90,6 +90,7 @@ class TextSnippets:
 
     def process_snippet(self, snippetword):
         if snippetword != "":
+            logging.debug("Processing snippet: %s" % snippetword)
             try:
                 snippet = self.config.get('snippets', snippetword)
             except ConfigParser.NoOptionError:
