@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 
-import ConfigParser
+#import ConfigParser
 import getopt
 import logging
 import os
 import sys
 import time
 
+from config import CustomConfigParser
 from keyboard import KeyboardTyper, Hotkey
 from window import Gui, NotifyWindow
 
@@ -33,7 +34,8 @@ class TextSnippets:
         logging.debug("Debugging mode on")
 
     def load_config(self):
-        self.config = ConfigParser.SafeConfigParser()
+        #self.config = ConfigParser.SafeConfigParser()
+        self.config = CustomConfigParser()
         try:
             self.config.readfp(open(sys.path[0] + "/defaults"))
             logging.debug("Loaded default configuration")

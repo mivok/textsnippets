@@ -111,15 +111,12 @@ class NotifyWindow:
             # messages for missing and invalid values (invalid only matters on
             # getint getfloat etc.
             try:
-                delay = self.config.getfloat('general', 'delay')
+                delay = self.config.getfloatdefault('general', 'delay', 0.1)
                 logging.debug("Delay set to %ss" % delay)
                 delay = int(delay * 1000)
             except ValueError:
                 logging.warning("Delay %ss not valid. Defaulting to 0.1s"
-                        % config.get('general', 'delay'))
-                delay = 1000
-            except ConfigParser.NoOptionError:
-                logging.warning("Delay value not set, defaulting to 0.1s")
+                        % self.config.get('general', 'delay'))
                 delay = 1000
             gobject.timeout_add(delay, self.callback, self.snippet)
 
