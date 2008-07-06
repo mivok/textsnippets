@@ -8,10 +8,13 @@ Logging
     - file to output to
     - Perhaps a gui messages viewer
 
-Add a post-correct hotkey and autocorrection:
-    - This will grab keys one by one, using the keytree code that was previously
-    removed (<3 version control)
-    - Type backspace n times in order for it to delete the old keys
+Setuptools
+    - Package things ready for release
+
+Config for the window
+    - colors/gradients etc.
+    - need to make sure the color spec is consistent in the config file
+    - html hex colors
 
 Support for typing special keys
     - newlines
