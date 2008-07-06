@@ -57,6 +57,7 @@ class NotifyWindow:
         self.update_label()
         self.window.set_position(gtk.WIN_POS_CENTER_ALWAYS)
         self.window.set_keep_above(True)
+        self.window.set_opacity(0.9)
         self.window.show()
         self.window.present()
         for i in xrange(20):
