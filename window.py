@@ -27,27 +27,34 @@ class Gui:
 class NotifyWindow:
     def __init__(self, config):
         self.window = FancyWindow(gtk.WINDOW_TOPLEVEL)
+
+        # TODO - make the height dynamic
         self.window.resize(1,70)
+
         self.window.connect("delete_event", self.delete_event)
         self.window.connect("destroy", self.destroy)
+        self.window.connect("key_press_event", self.key_press_event)
+
         self.window.set_type_hint(gtk.gdk.WINDOW_TYPE_HINT_SPLASHSCREEN)
         self.window.set_border_width(0)
         self.window.set_decorated(False)
 
         self.box = gtk.VBox()
+
         self.label = gtk.Label("")
-        self.box.add(self.label)
-        self.desclabel = gtk.Label("")
         self.label.set_ellipsize(pango.ELLIPSIZE_END)
         self.label.set_width_chars(40)
+        self.box.add(self.label)
+        self.label.show()
+
+        self.desclabel = gtk.Label("")
         self.desclabel.set_ellipsize(pango.ELLIPSIZE_END)
         self.desclabel.set_width_chars(40)
         self.box.add(self.desclabel)
+        self.desclabel.show()
+
         self.window.add(self.box)
         self.box.show()
-        self.label.show()
-        self.desclabel.show()
-        self.window.connect("key_press_event", self.key_press_event)
         self.config = config
 
     def main(self, callback):
@@ -55,11 +62,13 @@ class NotifyWindow:
         self.snippet = ""
         self.valid_snippet = False
         self.update_label()
+
         self.window.set_position(gtk.WIN_POS_CENTER_ALWAYS)
         self.window.set_keep_above(True)
         self.window.set_opacity(0.9)
         self.window.show()
         self.window.present()
+
         for i in xrange(20):
             val = gtk.gdk.keyboard_grab(self.window.window)
             if val == gtk.gdk.GRAB_SUCCESS:
@@ -89,13 +98,15 @@ class NotifyWindow:
         gtk.gdk.keyboard_ungrab()
 
     def update_label(self):
-        self.label.set_markup(self.markup("Snippet: " + self.snippet))
+        self.label.set_markup(self.markup(self.snippet))
         if self.valid_snippet:
             try:
                 self.desclabel.set_text(self.config.get('snippets',
                     self.snippet + 'desc'))
             except ConfigParser.NoOptionError:
                 self.desclabel.set_text("")
+        elif self.snippet == "":
+            self.desclabel.set_text("Begin typing to pick a snippet...")
         else:
             self.desclabel.set_text("")
 

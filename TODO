@@ -1,3 +1,7 @@
+Autocomplete/guessing
+    - see how gnome-do does it
+    - might need/want to bring back the tree if it's not back already
+
 Add daemon option
     - automatically log errors to a file
     - perhaps have some way of logging to a window?
