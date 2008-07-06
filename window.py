@@ -1,6 +1,7 @@
 import ConfigParser
 import logging
 import time
+import math
 
 import pygtk
 pygtk.require('2.0')
@@ -8,6 +9,7 @@ import gtk
 from gtk import gdk
 import gobject
 import pango
+import cairo
 
 class Gui:
     def __init__(self, config):
@@ -24,16 +26,22 @@ class Gui:
 
 class NotifyWindow:
     def __init__(self, config):
-        self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
+        self.window = FancyWindow(gtk.WINDOW_TOPLEVEL)
+        self.window.resize(1,70)
         self.window.connect("delete_event", self.delete_event)
         self.window.connect("destroy", self.destroy)
         self.window.set_type_hint(gtk.gdk.WINDOW_TYPE_HINT_SPLASHSCREEN)
         self.window.set_border_width(0)
         self.window.set_decorated(False)
+
         self.box = gtk.VBox()
         self.label = gtk.Label("")
         self.box.add(self.label)
         self.desclabel = gtk.Label("")
+        self.label.set_ellipsize(pango.ELLIPSIZE_END)
+        self.label.set_width_chars(40)
+        self.desclabel.set_ellipsize(pango.ELLIPSIZE_END)
+        self.desclabel.set_width_chars(40)
         self.box.add(self.desclabel)
         self.window.add(self.box)
         self.box.show()
@@ -47,7 +55,6 @@ class NotifyWindow:
         self.snippet = ""
         self.valid_snippet = False
         self.update_label()
-        self.window.resize(1,1) # Shrink the window to width of the text
         self.window.set_position(gtk.WIN_POS_CENTER_ALWAYS)
         self.window.set_keep_above(True)
         self.window.show()
@@ -90,7 +97,6 @@ class NotifyWindow:
                 self.desclabel.set_text("")
         else:
             self.desclabel.set_text("")
-        self.window.resize(1,1) # Shrink the window to width of the text
 
     def markup(self, text):
         """Marks up the text with the configured font and color depending on
@@ -121,3 +127,88 @@ class NotifyWindow:
                 delay = 1000
             gobject.timeout_add(delay, self.callback, self.snippet)
 
+
+class FancyWindow(gtk.Window):
+    def __init__(self, *args):
+        gtk.Window.__init__(self, *args)
+        self.connect('size-allocate', self._on_size_allocate)
+        self.set_decorated(False)
+        self.radius = 20
+        self.fixed = gtk.Fixed()
+        self.fixed.show()
+        gtk.Window.add(self,self.fixed)
+
+        # Original width and height used in the resize event
+        self._old_w = 0
+        self._old_h = 0
+
+        # Set the background
+        self.bg = gtk.Image()
+        self.bg.show()
+        self.fixed.put(self.bg, 0, 0)
+
+    def _on_size_allocate(self, win, allocation):
+        w,h = allocation.width, allocation.height
+
+        # Make sure we've really resized. This prevents an infinite loop where
+        # setting the background causes another resize event to be sent
+        if w == self._old_w and h == self._old_h:
+            return
+        else:
+            self._old_w = w
+            self._old_h = h
+
+        # Set the window shape
+        mask = self.get_mask(w,h)
+        win.shape_combine_mask(mask, 0, 0)
+
+        pixmap = self.get_bg(w,h)
+        self.bg.set_from_pixmap(pixmap, None)
+
+    def get_mask(self, w, h):
+        bitmap = gtk.gdk.Pixmap(None, w, h, 1)
+        cr = bitmap.cairo_create()
+
+        # Clear the bitmap
+        cr.set_source_rgb(0, 0, 0)
+        cr.set_operator(cairo.OPERATOR_DEST_OUT)
+        cr.paint()
+
+        # Draw the rounded border
+        cr.set_operator(cairo.OPERATOR_OVER)
+        self.draw_border_path(w, h, cr)
+        cr.fill()
+
+        return bitmap
+
+    def get_bg(self, w, h):
+        pixmap = gtk.gdk.Pixmap(None, w, h, 24)
+        cr = pixmap.cairo_create()
+
+        # Draw the rounded border
+        cr.set_operator(cairo.OPERATOR_OVER)
+        self.draw_border_path(w, h, cr)
+
+        r,g,b = 0.2, 0.3, 0.8
+        pattern = cairo.LinearGradient(0,h,0,0)
+        pattern.add_color_stop_rgb(0,r,g,b)
+        pattern.add_color_stop_rgb(h,r*2,g*2,b*2)
+        cr.set_source(pattern)
+        cr.fill_preserve()
+
+        cr.set_source_rgb(r/1.5, g/1.5, b/1.5)
+        cr.set_line_width(5.0)
+        cr.stroke_preserve()
+
+        return pixmap
+
+    def draw_border_path(self, w, h, cr):
+        r = self.radius
+        cr.arc(r, r, r, math.pi, 1.5 * math.pi)
+        cr.arc(w-r, r, r, 1.5 * math.pi, 0)
+        cr.arc(w-r, h-r, r, 0, math.pi/2)
+        cr.arc(r, h-r, r, math.pi/2, math.pi)
+        cr.line_to(0,r)
+
+    def add(self, widget):
+        self.fixed.put(widget, self.radius/2, self.radius/2)
