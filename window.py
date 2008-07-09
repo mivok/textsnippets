@@ -106,7 +106,7 @@ class NotifyWindow:
             except ConfigParser.NoOptionError:
                 self.desclabel.set_text("")
         elif self.snippet == "":
-            self.desclabel.set_text("Begin typing to pick a snippet...")
+            self.desclabel.set_text("Type a snippet name...")
         else:
             self.desclabel.set_text("")
 
@@ -188,7 +188,7 @@ class FancyWindow(gtk.Window):
 
         # Draw the rounded border
         cr.set_operator(cairo.OPERATOR_OVER)
-        self.draw_border_path(w, h, cr)
+        self.rounded_rectangle(0, 0, w, h, self.radius, cr)
         cr.fill()
 
         return bitmap
@@ -199,7 +199,7 @@ class FancyWindow(gtk.Window):
 
         # Draw the rounded border
         cr.set_operator(cairo.OPERATOR_OVER)
-        self.draw_border_path(w, h, cr)
+        self.rounded_rectangle(0, 0, w, h, self.radius, cr)
 
         r,g,b = 0.2, 0.3, 0.8
         pattern = cairo.LinearGradient(0,h,0,0)
@@ -214,13 +214,12 @@ class FancyWindow(gtk.Window):
 
         return pixmap
 
-    def draw_border_path(self, w, h, cr):
-        r = self.radius
-        cr.arc(r, r, r, math.pi, 1.5 * math.pi)
-        cr.arc(w-r, r, r, 1.5 * math.pi, 0)
-        cr.arc(w-r, h-r, r, 0, math.pi/2)
-        cr.arc(r, h-r, r, math.pi/2, math.pi)
-        cr.line_to(0,r)
+    def rounded_rectangle(self, x, y, w, h, r, cr):
+        cr.arc(x+r, y+r, r, math.pi, 1.5 * math.pi)
+        cr.arc(x+w-r, y+r, r, 1.5 * math.pi, 0)
+        cr.arc(x+w-r, y+h-r, r, 0, math.pi/2)
+        cr.arc(x+r, y+h-r, r, math.pi/2, math.pi)
+        cr.line_to(x,y+r)
 
     def add(self, widget):
         self.fixed.put(widget, self.radius/2, self.radius/2)
