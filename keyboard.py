@@ -136,7 +136,7 @@ class KeyboardTyper:
                     #keysym = XK.string_to_keysym(str)
                     keysym = curr[wrap_key_index]
                     keycode = keycode_index + min_keycode
-                    if not ksmm.has_key(keysym):
+                    if not keysym in ksmm:
                         ksmm[keysym] = self._str_to_keycode(
                             self.key_modifiers[wrap_key_index])
                         kskc[keysym] = keycode
