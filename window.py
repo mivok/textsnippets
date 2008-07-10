@@ -29,7 +29,7 @@ class NotifyWindow:
         self.window = FancyWindow(gtk.WINDOW_TOPLEVEL)
 
         # TODO - make the height dynamic
-        self.window.resize(1,70)
+        self.window.resize(1,60)
 
         self.window.connect("delete_event", self.delete_event)
         self.window.connect("destroy", self.destroy)
@@ -144,20 +144,13 @@ class FancyWindow(gtk.Window):
     def __init__(self, *args):
         gtk.Window.__init__(self, *args)
         self.connect('size-allocate', self._on_size_allocate)
+        self.connect_after('expose-event', self._after_expose_event)
         self.set_decorated(False)
         self.radius = 20
-        self.fixed = gtk.Fixed()
-        self.fixed.show()
-        gtk.Window.add(self,self.fixed)
 
         # Original width and height used in the resize event
         self._old_w = 0
         self._old_h = 0
-
-        # Set the background
-        self.bg = gtk.Image()
-        self.bg.show()
-        self.fixed.put(self.bg, 0, 0)
 
     def _on_size_allocate(self, win, allocation):
         w,h = allocation.width, allocation.height
@@ -174,8 +167,14 @@ class FancyWindow(gtk.Window):
         mask = self.get_mask(w,h)
         win.shape_combine_mask(mask, 0, 0)
 
-        pixmap = self.get_bg(w,h)
-        self.bg.set_from_pixmap(pixmap, None)
+    def _after_expose_event(self, win, event):
+        # Draw the background
+        w = win.allocation.width
+        h = win.allocation.height
+        cr = win.window.cairo_create()
+        self.draw_bg(w, h, cr)
+        # Make sure we draw the children
+        win.propagate_expose(win.get_child(), event)
 
     def get_mask(self, w, h):
         bitmap = gtk.gdk.Pixmap(None, w, h, 1)
@@ -193,10 +192,7 @@ class FancyWindow(gtk.Window):
 
         return bitmap
 
-    def get_bg(self, w, h):
-        pixmap = gtk.gdk.Pixmap(None, w, h, 24)
-        cr = pixmap.cairo_create()
-
+    def draw_bg(self, w, h, cr):
         # Draw the rounded border
         cr.set_operator(cairo.OPERATOR_OVER)
         self.rounded_rectangle(0, 0, w, h, self.radius, cr)
@@ -212,14 +208,9 @@ class FancyWindow(gtk.Window):
         cr.set_line_width(5.0)
         cr.stroke_preserve()
 
-        return pixmap
-
     def rounded_rectangle(self, x, y, w, h, r, cr):
         cr.arc(x+r, y+r, r, math.pi, 1.5 * math.pi)
         cr.arc(x+w-r, y+r, r, 1.5 * math.pi, 0)
         cr.arc(x+w-r, y+h-r, r, 0, math.pi/2)
         cr.arc(x+r, y+h-r, r, math.pi/2, math.pi)
         cr.line_to(x,y+r)
-
-    def add(self, widget):
-        self.fixed.put(widget, self.radius/2, self.radius/2)
