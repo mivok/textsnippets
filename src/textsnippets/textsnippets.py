@@ -37,7 +37,8 @@ class TextSnippets:
         #self.config = ConfigParser.SafeConfigParser()
         self.config = CustomConfigParser()
         try:
-            self.config.readfp(open(sys.path[0] + "/defaults"))
+            self.config.readfp(open(os.path.join(os.path.dirname(__file__),
+                                                 "data", "defaults")))
             logging.debug("Loaded default configuration")
         except IOError:
             logging.error("Unable to load default configuraiton. The program"
