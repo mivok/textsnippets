@@ -2,7 +2,7 @@
 [general]
 # Hotkey to use
 # Default is super+space (super is the windows key)
-hotkey=Space
+hotkey=space
 modifiers=super
 
 ## Time to wait before starting to type
