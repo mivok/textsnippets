@@ -1,0 +1,16 @@
+Textsnippets runs on X windows, requires python and the following python
+packages:
+
+    python-xlib - http://python-xlib.sourceforge.net/
+    pygtk - http://www.pygtk.org/
+    pycairo - http://cairographics.org/pycairo/
+
+In ubuntu, you can do the following:
+
+    sudo aptitude install python-xlib python-gtk2 python-cairo
+
+Once you have the dependencies installed, you can either run tsnippets
+directly from the source directory, or run the following command to install
+it:
+
+    python setup.py install
