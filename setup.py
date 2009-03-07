@@ -11,5 +11,5 @@ setup (name="TextSnippets",
        package_dir={'': 'src'},
        packages=['textsnippets'],
        package_data={'textsnippets': ['data/*']},
-       scripts=['src/ts']
+       scripts=['src/tsnippets']
 )
