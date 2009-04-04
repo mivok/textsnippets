@@ -40,15 +40,19 @@ class Hotkey:
                 'mod5':     X.Mod5Mask
             }
             modmask = 0
-            modlist = modifiers.split('+')
-            logging.debug("Modifiers are: %s" % ', '.join(modlist))
-            for mod in modlist:
-                try:
-                    modmask |= modmasks[mod]
-                except KeyError:
-                    logging.error('Invalid modifier key: %s. Ignoring this key'
+            if modifiers:
+                modlist = modifiers.split('+')
+                logging.debug("Modifiers are: %s" % ', '.join(modlist))
+                for mod in modlist:
+                    try:
+                        modmask |= modmasks[mod]
+                    except KeyError:
+                        logging.error(
+                            'Invalid modifier key: %s. Ignoring this key'
                             % mod)
-            logging.debug("Modmask is: %s" % modmask)
+                logging.debug("Modmask is: %s" % modmask)
+            else:
+                logging.debug("No modifiers specified")
         # If we have a number, then take it as a keycode, otherwise, treat it
         # as a key name
         try:
